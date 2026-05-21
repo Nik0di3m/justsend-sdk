@@ -359,10 +359,32 @@ export interface JustsendConfig {
   timeout?: number;
 }
 
-// Error interface
-export interface JustsendError {
-  message: string;
-  status?: number;
-  code?: string;
-  details?: unknown;
+// Error — rzucany jako instancja Error, więc `err instanceof Error` działa,
+// a status/code/details są dostępne wprost na obiekcie błędu.
+export class JustsendError extends Error {
+  readonly status?: number;
+  readonly code?: string;
+  readonly details?: unknown;
+
+  constructor(
+    message: string,
+    options: {
+      status?: number | undefined;
+      code?: string | undefined;
+      details?: unknown;
+    } = {},
+  ) {
+    super(message);
+    this.name = "JustsendError";
+
+    if (options.status !== undefined) {
+      this.status = options.status;
+    }
+    if (options.code !== undefined) {
+      this.code = options.code;
+    }
+    if (options.details !== undefined) {
+      this.details = options.details;
+    }
+  }
 }

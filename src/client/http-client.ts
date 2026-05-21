@@ -46,29 +46,24 @@ export class HttpClient {
   }
 
   private handleError(error: AxiosError): JustsendError {
-    const justsendError: JustsendError = {
-      message: error.message || "Unknown error occurred",
-      details: error.response?.data,
-    };
+    let message = error.message || "Unknown error occurred";
+    let code: string | undefined;
+    const status = error.response?.status;
+    const details = error.response?.data;
 
-    if (error.response?.status !== undefined) {
-      justsendError.status = error.response.status;
-    }
-
-    if (error.response?.data && typeof error.response.data === "object") {
-      const responseData = error.response.data as any;
-
-      // Handle API error responses
-      if (responseData.message) {
-        justsendError.message = responseData.message;
+    // Odpowiedzi błędów API JustSend niosą message/code w body — wyciągamy je,
+    // żeby komunikat błędu był konkretny, a nie gołe "Request failed...".
+    if (details && typeof details === "object") {
+      const responseData = details as Record<string, unknown>;
+      if (typeof responseData.message === "string") {
+        message = responseData.message;
       }
-
-      if (responseData.code) {
-        justsendError.code = responseData.code;
+      if (typeof responseData.code === "string") {
+        code = responseData.code;
       }
     }
 
-    return justsendError;
+    return new JustsendError(message, { status, code, details });
   }
 
   async get<T>(url: string, params?: Record<string, any>): Promise<T> {
